@@ -1,0 +1,97 @@
+#include <Servo.h>    //Included to be used in servo motor
+
+int whiteLED1 = 3;  //Kitchen LED
+int whiteLED2 = 4;  //Kitchen LED
+
+//Used to control piezo speaker and LED mimicking fire alarm
+int photocellPin = 0;     // initializes variable for photoCellPin being connected to A0
+int photocellReading;     // Analog reading - this is what will be printed out
+
+//Bedroom Variables
+int photocellPin2 = 7;     // initializes variable for photoCellPin being connected to A7
+int photoCellReading2;     // Analog reading - this is what will be printed out
+int bedroomLED = 2;       //Bedroom LED System connected to digital input 4  
+
+//Pizeo Speaker connection
+const int buzzer = 8; //buzzer to arduino pin 8
+
+//Servo Motor Variables
+Servo myservo;  // create servo object to control a servo
+int potpin = A4;  // analog pin used to connect the potentiometer
+int val;    // variable to read the value from the analog pin
+
+//Button Variables controlling Kitchen lights
+const char BUTTON_PIN = 11;
+bool pressed = false;
+
+//PIR Motion Sensor Variables
+int pirPin = 6;   //initializes pin in which pir is connected
+int ledPin = 13; //built in LED
+int pirValue;
+
+void setup()
+{
+  pinMode(whiteLED1, OUTPUT);  //Kitchen LED
+  pinMode(whiteLED2, OUTPUT);  //Kitchen LED
+
+  pinMode(LED_BUILTIN, OUTPUT); 
+  pinMode(buzzer, OUTPUT);    //Piezo Speaker 
+
+  pinMode(bedroomLED, OUTPUT);  //Bedroom LED 
+  
+  myservo.attach(12);  // Servo is attached to pin 12
+
+  pinMode(BUTTON_PIN, INPUT_PULLUP);  //Button 
+
+  pinMode(pirPin, INPUT);   //PIR Motion Sensor 
+  pinMode(ledPin, OUTPUT);
+  digitalWrite(ledPin, LOW);
+
+  Serial.begin(9600);
+
+}
+void loop() {
+
+  //The following lines of code correlate to the motion sensor in the hallway.
+  //When motion is detected, "Welcome Home" is printed in the serial monitor to mimick being greeted at the door.
+  pirValue = digitalRead(pirPin); //read the pir value
+  digitalWrite(ledPin, pirValue);     //write the pir value
+  Serial.println("Welcome Home");
+
+  bool  currentStatus = digitalRead(BUTTON_PIN);    //Takes in input from the button pin variable
+
+//The below loop checks to see if the button is pressed or not.
+//Once pressed, the kitchen lights will turn on.
+  if (currentStatus == pressed){
+    digitalWrite(whiteLED1, HIGH);  //Turns on the first kitchen light
+    digitalWrite(whiteLED2, HIGH);  //Turns on the second kitchen light
+    delay(1000);
+  }
+
+  photocellReading = analogRead(photocellPin);  //takes in the photoCell reading at A0
+  photoCellReading2 = analogRead(photocellPin2); //takes in the photoCell reading at A7
+
+ 
+  Serial.print("Analog reading = "); //Outprints a phrase before the reading to tell users what the number is
+  Serial.println(photocellReading); //Outprints the value of the photoCellReading
+
+  delay(1000);
+
+//The below if loop is used in the kitchen. It indicates when the photo cell reading is >= 180, the speaker goes off, mimicking a fire alarm.
+  if (photocellReading >= 180) {
+    tone(buzzer, 1000);           //Signals to set the speaker on
+    delay(1000);  
+    noTone(buzzer);              //Signals to set the speaker off
+    delay(1000);     
+}
+//This loop controls when the LEd will turn on in the bedroom.
+  if (photoCellReading2 > 100) {      
+    digitalWrite(bedroomLED, HIGH);
+}
+//The following code is used in the garage for the servo motor, which mimicks a car piece.
+  val = analogRead(potpin);            // We first take in and read the value of the potentiometer
+  val = map(val, 0, 1023, 0, 180);     // Scale the mapping value
+  myservo.write(val);                  // We then write and set the position the motor needs to move to
+  delay(15);                           // Delays 15 milliseconds for the servo motor to move
+}
+
