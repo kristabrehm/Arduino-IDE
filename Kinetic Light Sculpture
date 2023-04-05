@@ -1,0 +1,134 @@
+// LED Configuration Variables
+#include <FastLED.h>      // Library for efficient LED control
+#include <Servo.h>        //Library for servo motor
+
+
+#define DATA_PIN 51          // MOSI (Serial Peripheral Interface (SPI) Output pin)
+#define CLOCK_PIN 52         // SCK (Serial Peripheral Interface (SPI) Clock pin)
+#define LED_TYPE DOTSTAR     //APA 102-2020
+#define COLOR_ORDER BGR      // This order can vary between LED types
+const int NUM_LEDS = 16;     // Number of LEDs you are communicating with
+CRGB leds[NUM_LEDS];         // Define the array of LEDs
+#define BRIGHTNESS 100       //max 255
+
+byte ledHue = 0;                          
+// End LED Configuration
+
+Servo myservo;                // create servo object to control a servo
+int servopos;                  // variable to store the servo position
+int servoChange = 1;
+
+//Position Variables
+signed int pos = 0;           // used to keep track of the location of an LED in the first function
+signed int posChange = 1;     // used to shift the position of the LED
+
+signed int pos2 = 15;         // used to keep track of the location of an LED in the second function
+signed int pos2Change = 1;    // used to shift the position of the LED
+
+
+// Timer Configuration
+#include <elapsedMillis.h>
+elapsedMillis ledTimer;
+unsigned long ledInterval = 100;
+
+elapsedMillis led2Timer;
+unsigned long led2Interval = 90;
+
+elapsedMillis servoTimer;
+unsigned long servoInterval = 300;
+// End Timer Configuration
+
+
+void setup() {
+  Serial.begin(9600);
+
+  // tell FastLED about the LED strip configuration
+  FastLED.addLeds<LED_TYPE, DATA_PIN, CLOCK_PIN, COLOR_ORDER, DATA_RATE_MHZ(12)>(leds, NUM_LEDS).setCorrection(TypicalSMD5050);
+  // set master brightness control
+  FastLED.setBrightness(BRIGHTNESS);
+  myservo.attach(9);  // attaches the servo on pin 9 to the servo object
+}
+
+//This is our main loop
+void loop() {
+  setAllLeds();
+  servoloop(); 
+}
+
+//this method is used to set all LEDs to green. This is called in the main loop and used as the 'default' color
+//setting for the LEDs
+void setAllLeds() {
+    fill_solid(leds, NUM_LEDS, CRGB(0, 255, 0));
+}
+
+//This method is used to set specific LEDs to yellow.
+void setLedsTwo() {
+   // fill_solid(leds, NUM_LEDS, CRGB(255, 0, 0));
+    leds[0] = CRGB(255, 255, 0);  
+    leds[2] = CRGB(255, 255, 0);  
+    leds[4] = CRGB(255, 255, 0);  
+    leds[6] = CRGB(255, 255, 0);  
+    leds[8] = CRGB(255, 255, 0);   
+    leds[10] = CRGB(255, 255, 0);  
+    leds[12] = CRGB(255, 255, 0);  
+    leds[14] = CRGB(255, 255, 0);  
+}
+
+//The method is called in in the servoloop method and is only executed under specific conditions.
+//This method essentially makes a LED that 'travel's up and down the LED strip. 
+void loneLedTraveler() {
+  if (ledTimer >= ledInterval) {
+    ledTimer = 0;               // reset the timer
+    leds[pos] = CRGB(255, 0, 0);  //set the current led to red
+    pos = pos + posChange;
+    if (pos >= 15 || pos <= 0) {
+      posChange = posChange * -1;
+    }
+    pos = constrain(pos, 0, NUM_LEDS - 1);
+    leds[pos] = CHSV(96, 200, 100);  // set the next led to color
+    FastLED.show();
+  }
+}
+
+//The method is also only called in in the servoloop method and is only executed under specific conditions.
+//This method essentially makes a LED that 'travel's up and down the LED strip. 
+void anotherLedTraveler() {
+  if (led2Timer >= led2Interval) {
+    led2Timer = 0;               // reset the timer
+    leds[pos2] = CRGB(0, 0, 255);  //set the current led to blue
+    pos2 = pos2 + pos2Change;
+    if (pos2 >= 15 || pos2 <= 0) {
+      pos2Change = pos2Change * -1;
+    }
+    pos2 = constrain(pos2, 0, NUM_LEDS - 1);
+    leds[pos2] = CHSV(32, 200, 100);  // set the next led to color
+    FastLED.show();
+  }
+}
+
+//this method controls our servo motor.
+//The method uses multiple for loops for control when the servo motor is at a specific position,
+//then, and only then, will the timer if statement be executed and the additional methods be called. 
+//We don't want to use delay so we instead use a series of if statements and instantiate a timer.
+void servoloop() {
+  for (servopos = 0; servopos <= 180; servopos += 1) { // goes from 0 degrees to 180 degrees
+    if (servoTimer >= servoInterval) {
+      servoTimer = 0;
+      myservo.write(servopos);
+    }           
+    //the following if statement is used for motion - LED corrleation.
+    //What I mean by this, is that under the condition that the servoTimer and servoInternval are equal within the servo movement,
+    //then and only then will these methods be called and executed.     
+     if (servoTimer == servoInterval) {
+       loneLedTraveler();
+       anotherLedTraveler();  
+       setLedsTwo();
+      }  
+  }
+  for (servopos = 180; servopos >= 0; servopos -= 1) { // goes from 180 degrees to 0 degrees
+    if (servoTimer >= servoInterval) {
+      servoTimer = 0;
+      myservo.write(servopos);
+    }                      
+  }
+}
