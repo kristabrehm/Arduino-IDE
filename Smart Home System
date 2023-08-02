@@ -1,3 +1,6 @@
+//For a complete video explanation of this project, please view the following:
+// https://youtu.be/FUdNbQVXEWs
+
 #include <Servo.h>    //Included to be used in servo motor
 
 int whiteLED1 = 3;  //Kitchen LED
