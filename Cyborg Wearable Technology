@@ -1,0 +1,76 @@
+
+
+//For this project, I took creativity from the 'wearable technology' aspect of the explanation.
+//Not necessarily an extension of the human body, my sensor Kentucky Derby Hat is designed to
+//use a water sensor and 1. alert the individual that it is raining, and 2. do so in a whimsical way such that
+//featherts on the hat move back an forth, mimicking wings. The hat is designed to still look 
+//stylish for the event as well. 
+
+//Servo Motor Variables
+#include <Servo.h>
+Servo myservo;
+int pos = 0;
+
+// Timer Configuration
+#include <elapsedMillis.h>
+elapsedMillis ledTimer;
+unsigned long ledInterval = 100;
+
+//Pizeo Speaker Variable
+const int buzzer = 8; //buzzer to arduino pin 8
+
+//Water Sensor Variables
+int waterSensorValue = 0;
+int waterSensorPin = A1;
+
+//PIR Motion Sensor Variables
+const int PIN_TO_SENSOR = 6;   // the pin that OUTPUT pin of sensor is connected to
+int pinStateCurrentMotion = LOW; // current state of pin
+int pinStatePreviousMotion = LOW; // previous state of pin
+
+//LED Variable
+int led1 = 3; //digital pin 3
+
+void setup() {
+    pinMode(buzzer, OUTPUT);        //Piezo Speaker 
+    pinMode(PIN_TO_SENSOR, INPUT);  // set arduino pin to input mode to read value from OUTPUT pin of sensor
+
+    pinMode(led1, OUTPUT);          //Set up LED
+
+    myservo.attach(9);              // attaches the servo on pin 9 to the servo object
+
+    Serial.begin(9600);             //Start serial moniter
+}
+
+void loop() {
+  pinStatePreviousMotion = pinStateCurrentMotion; // store old state of motion sensor
+  pinStateCurrentMotion = digitalRead(PIN_TO_SENSOR);   // read new state of motion sensor pin value
+
+//The below if loop correlates to the water sensor:
+//If water is detected and the resval is >= 100, the piezo speaker goes off.
+//In addition, the movement of the feathers, "wings," is also controlled here. In the case that
+//water is detected, the servo motor utilizes sweep to essential osciliate back and forth until no
+//more water is detected. It will stop once water is no longer detected. 
+  waterSensorValue = analogRead(waterSensorPin);
+  if (waterSensorValue >= 100) {
+    tone(buzzer, 1000);           //Signals to set the speaker on
+    delay(1000);  
+    noTone(buzzer);              //Signals to set the speaker off
+    delay(1000); 
+
+  }
+  if (waterSensorValue >= 100) { 
+    //We are using sweep for the servo movement so we will be using 2 for loops for the 
+    //movement to go back and forth. NOTE: These for loops are nested within the if statment meaning
+    //that they will only be reached when the if statement is true.
+
+  for (pos = 0; pos <= 180; pos += 1) { // goes from 0 degrees to 180 degrees
+    myservo.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(15);                       // waits 15 ms for the servo to reach the position
+  }
+  for (pos = 180; pos >= 0; pos -= 1) { // goes from 180 degrees to 0 degrees
+    myservo.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(15);                       // waits 15 ms for the servo to reach the position
+  }
+} 
+}
