@@ -1,0 +1,99 @@
+//Krista Brehm
+//Sensor-Actuator Demo
+//This code is a prime example of how to utilize multiple sensors and actuators simultaneously without delay. 
+
+//we need to include the elapsedMillis library
+#include <elapsedMillis.h>
+
+//LED Variables
+const int ledPin = 8;  //define our led variable
+bool ledState = 0;
+int blinkInterval = 1000;
+elapsedMillis ledTimer;
+
+//Piezo Buzzer Variables
+int buzzerPin=9;
+unsigned long buzzerStart;
+const int buzzerTimeOn=1000;
+const int buzzerTime=2000;
+
+//Water Sensor Variables
+const int waterPin =  7;
+const int signalPin = A12;
+int value = 0; 
+
+//Push Button & LED Variables
+const int buttonPin = 2;  // the number of the pushbutton pin
+const int ledPin2 = 11;    // the number of the LED pin
+int buttonState = 0;
+
+//Variables to address Serial Monitor Printing
+elapsedMillis printTimer;
+int printInterval = 250;
+bool printNow = 0;
+
+void setup() {
+  pinMode(ledPin, OUTPUT);      //initialize ledPin to be read as an output.
+
+  pinMode(ledPin2, OUTPUT);    // initialize the LED pin as an output:
+  pinMode(buttonPin, INPUT);  // initialize the pushbutton pin as an input:
+
+  pinMode(waterPin, OUTPUT);   // configure D7 pin as an OUTPUT
+  digitalWrite(waterPin, LOW); // turn the sensor OFF
+
+  Serial.begin(9600);           //begin running our serial monitor
+}
+
+
+void loop() {
+  //the following code is related to the blue, blinking LED.
+  //Because we want numerous sensors and actuators to work at once, we used elapsedMillis to avoid using delay.
+  //Lines 53 - 56 uses an if statement to see if the timer is greater or equal to the blinking interval 
+
+  if (ledTimer >= blinkInterval) {
+    ledTimer = 0;
+    ledState = !ledState;
+    digitalWrite(ledPin, ledState);
+  }
+
+  //Lines 48 - 51 correspond to the pizeo buzzer. We declared numerous variables to instantiate the entire cycle length
+  //of the buzzer (the time it is on AND off). By doing so we can use an if statement to have the buzzer go off.
+  //The following code was derived from the following however changed to use elapsedMillis:
+  //https://forum.arduino.cc/t/play-piezo-buzzer-without-delay/354781
+
+  if (millis() - buzzerStart >= buzzerTime) {
+    buzzerStart += buzzerTime;
+    tone(buzzerPin, 600, buzzerTimeOn); 
+  }
+
+  //Lines 74 - 88 correspond to the the water sensor module.
+  //The sensor module's value is printed in the serial monitor.
+  //You can see that when water is on the module, the value is much higher than without.
+  //Reference can be found here: https://arduinogetstarted.com/tutorials/arduino-water-sensor
+
+  digitalWrite(waterPin, HIGH);  // turn the sensor ON
+  value = analogRead(signalPin); // read the analog value from sensor
+  digitalWrite(waterPin, LOW);   // turn the sensor OFF
+
+  //the following lines of code were derived from the multitasking example on canvas
+  //These lines are used to address the water sensor printing out the value in the serial monitor.
+  //We cannot have the output continually printing so we use elapsedMillis() to slow it down.
+  if (printTimer >= printInterval) {
+    printTimer = 0;  
+    printNow = 1;
+  } else {
+    printNow = 0;
+  }
+  if (printNow == 1) {
+    Serial.print("Sensor value: ");
+    Serial.println(value);
+  }
+
+  //The following lines of code (lines 92 - 97) correspond to the pushbutton and how it controls the green led.
+  //If the pushbutton is pressed, the LED turns on, however turns off if the pushbutton is not pressed.
+  if (buttonState == HIGH) {
+    digitalWrite(ledPin2, HIGH);
+  } else {
+    digitalWrite(ledPin2, LOW);
+  }
+}
